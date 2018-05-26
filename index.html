@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Offsetter</title>
+		<link href="css/bootstrap.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+		<!-- Include all compiled plugins (below), or include individual files as needed -->
+		<script src="js/bootstrap.min.js"></script>
+		
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<div class="form-group">
+						<label for="exampleInputPassword1">Input</label>
+						<textarea id="exampleInputPassword1" class="form-control" rows="30"></textarea>
+						<button type="button" onclick="MakeKeyValues()" class="btn btn-primary btn-lg btn-block">Search</button>
+					</div>
+				</div>
+			</div>
+			
+			<div class="row">
+				<div class="col-md-12">
+					<h4>Offset to find closest propery to:</h4>
+					<input type="number" id="SearchValue" class="form-control"/>
+					
+					<h3>Result:</h3>
+					<input type="text" readonly id="exampleInputPassword2" class="form-control"/>
+				</div>
+			</div>
+		</div>
+			
+		<script>
+			const regex = /(Member: |Table: )([^base][^0-9][^\s]+) (\(offset (\d*)\))/g;
+			
+			function MakeKeyValues()
+			{
+				var input = $("#exampleInputPassword1");
+				var output = $("#exampleInputPassword2");
+				
+				var valueLookedFor = $("#SearchValue").val();
+				
+				var inputtext = input.val();
+				
+				let m;
+				
+				//So far
+				var BestOffset = 9999999;
+				
+				//Good boy
+				var ClosestOffset = 0;
+				var ClosestVar = "";
+				
+				let array = [];
+				
+				while ((m = regex.exec(inputtext)) !== null) 
+				{
+					// This is necessary to avoid infinite loops with zero-width matches
+					if (m.index === regex.lastIndex) {
+						regex.lastIndex++;
+					}
+					
+					var obj = {
+						
+					}
+					
+					// The result can be accessed through the `m`-variable.
+					m.forEach((match, groupIndex) => {
+						
+						if(groupIndex == 2)
+						{
+							obj.var = match;
+						}
+						
+						if(groupIndex == 4)
+						{
+							obj.offset = match;
+							
+							array.push(obj);
+							
+							console.log(obj);
+						}
+						
+						if(groupIndex != 4)	{
+							return;
+						}
+						
+						if(match == 0) {
+							return;
+						}
+						
+						let erotus = Math.abs(match - valueLookedFor);
+						
+						if(erotus < BestOffset)
+						{
+							BestOffset = erotus;
+							
+							ClosestOffset = match;
+							ClosestVar = obj.var;
+						}
+					});
+				}
+				
+				var PlusOrMinus = " ";
+				
+				if(valueLookedFor < ClosestOffset)
+					PlusOrMinus = "-";
+				else if(valueLookedFor > ClosestOffset)
+					PlusOrMinus = "+";
+				
+				output.val(`${ClosestVar} ${PlusOrMinus} ${BestOffset}       = ${valueLookedFor}`);
+			}
+		</script>
+	</body>
+</html>
