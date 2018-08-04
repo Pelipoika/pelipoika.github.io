@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Offsetter</title>
+		<link href="css/bootstrap.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+		
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<div class="form-group">
+						<label for="exampleInputPassword1">Input netprops.txt class(ses) that you want a dump of vars for</label>
+						<textarea id="exampleInputPassword1" class="form-control" rows="20"></textarea>
+						<button type="button" onclick="DoSearch()" class="btn btn-primary btn-lg btn-block">Extract non-inherited variables</button>
+					</div>
+				</div>
+			</div>
+			
+			<div class="row">
+				<div class="col-md-12">
+					<h3>Extracted variables:</h3>
+					<textarea id="exampleInputPassword2" class="form-control" rows="30"></textarea>
+				</div>
+			</div>
+		</div>
+			
+		<script>
+			//Matches class names
+			const regexClass = /^[^\r\n-/ ]+/;
+			
+			//Matches member variables and classes
+			const regexVariable = /^ (Member|Table):.*?([^base][^0-9][^\s]+) (\(offset (?!0)(\d*)\))/;
+			
+			function DoSearch()
+			{
+				var input  = $("#exampleInputPassword1");
+				var output = $("#exampleInputPassword2");
+				
+				var inputtext = input.val().split('\n');
+				
+				//Array of class objects
+				var arrayClasses = [];
+				
+				//Are we searching for class variables?
+				var bSearchingInClass = false;
+				
+				//Keep track of class position in classes array
+				var indexOfClassInArray = 0;
+				
+				//Loop input line-by-line
+				for (var i = 0; i < inputtext.length; i++)
+				{
+					var lineText = inputtext[i];
+					
+					var className = SearchClass(lineText);
+					
+					//Start of new class
+					if (className !== "") {
+					
+						//Found start of a class, make an object for it in the class array.
+						bSearchingInClass = true;
+						
+						indexOfClassInArray = arrayClasses.push({
+							"class": className,
+							"properties": []
+						});
+						
+						console.info(className);
+					} 
+					
+					//Collect variables into class
+					if (bSearchingInClass) {
+						let variableObj = SearchVariables(lineText);
+						
+						if(variableObj.hasOwnProperty('property')) {
+							arrayClasses[indexOfClassInArray - 1].properties.push(variableObj);
+							console.info(variableObj);
+						}
+					}
+				}
+
+				var stringOutput = JSON.stringify(arrayClasses, null, '\t');
+				
+				output.val(stringOutput);
+			}
+			
+			//Returns classname 
+			function SearchClass(str) {
+				let m;
+
+				if ((m = regexClass.exec(str)) !== null) {
+					return m[0];
+				}
+				
+				return "";
+			}
+			
+			//Returns variable
+			function SearchVariables(str) 
+			{
+				var obj = {};
+			
+				let m;
+
+				if ((m = regexVariable.exec(str)) !== null) {
+					m.forEach((match, groupIndex) => {
+					//	console.log(`Found match, group ${groupIndex}: ${match}`);
+						
+						if(groupIndex == 1) {
+							obj.proptype = match;
+						}
+						
+						if(groupIndex == 2) {
+							obj.property = match.trim();
+						}
+						
+						if(groupIndex == 4) {
+							obj.offset = match;
+						}
+					});
+				}
+				
+				return obj;
+			}
+		</script>
+	</body>
+</html>
